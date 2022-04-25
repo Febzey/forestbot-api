@@ -6,13 +6,13 @@ import (
 
 	"github.com/febzey/forestbot-api/pkg/types"
 
-	"github.com/febzey/forestbot-api/pkg/controllers"
+	private_controllers "github.com/febzey/forestbot-api/pkg/controllers/private"
 	"github.com/gorilla/mux"
 )
 
 func PrivateRoutes(router *mux.Router, db *sql.DB) {
-	r := controllers.Routes{
-		DB: db,
+	r := private_controllers.PrivateRoute{
+		Db: db,
 	}
 
 	var routes = []types.Route{

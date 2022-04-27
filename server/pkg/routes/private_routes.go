@@ -8,11 +8,13 @@ import (
 
 	private_controllers "github.com/febzey/forestbot-api/pkg/controllers/private"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 )
 
-func PrivateRoutes(router *mux.Router, db *sql.DB) {
+func PrivateRoutes(router *mux.Router, db *sql.DB, ws *websocket.Upgrader) {
 	r := private_controllers.PrivateRoute{
 		Db: db,
+		Ws: ws,
 	}
 
 	var routes = []types.Route{
@@ -57,6 +59,11 @@ func PrivateRoutes(router *mux.Router, db *sql.DB) {
 			Method:      http.MethodGet,
 			Pattern:     "/uniqueplayers/{server}",
 			HandlerFunc: r.GetUniquePlayerCount,
+		},
+		{
+			Method:      http.MethodGet,
+			Pattern:     "/ws-auth/{server}/{key}",
+			HandlerFunc: r.WebsocketAuth,
 		},
 	}
 

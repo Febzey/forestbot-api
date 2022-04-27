@@ -7,15 +7,15 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/febzey/forestbot-api/pkg/configs"
 	"github.com/febzey/forestbot-api/pkg/database"
 	"github.com/febzey/forestbot-api/pkg/routes"
-	"github.com/febzey/forestbot-api/pkg/utils"
+	"github.com/febzey/forestbot-api/pkg/websocket"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 )
 
 func main() {
+	router := mux.NewRouter()
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println(err)
@@ -26,22 +26,25 @@ func main() {
 		fmt.Println("Error creating connection to database: ", err)
 	}
 
-	router := mux.NewRouter()
+	websocket := websocket.Create_websocket_server()
+
+	//watch for new connections to websocket
 
 	routes.PublicRoutes(router, db)
-	routes.PrivateRoutes(router, db)
+	routes.PrivateRoutes(router, db, websocket)
 
 	router.Use(mux.CORSMethodMiddleware(router))
 
-	server := configs.ServerConfig(router)
-
-	utils.StartServer(server)
+	server := ServerConfig(router)
+	StartServer(server)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	<-c
 
-	database.EndConnection(db)
-
 	log.Println("Server is shutting down...")
+	database.EndConnection(db)
+	server.Close()
+	log.Println("Server has shut down.")
+
 }

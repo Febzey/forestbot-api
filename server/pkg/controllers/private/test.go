@@ -3,31 +3,51 @@ package private_controllers
 import (
 	"fmt"
 	"net/http"
+	"sync"
 
-	"github.com/febzey/forestbot-api/pkg/websocket"
+	ws "github.com/febzey/forestbot-api/pkg/websocket"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 )
 
-func (f *PrivateRoute) WebsocketAuth(w http.ResponseWriter, r *http.Request) {
-	ws := f.Ws
-	db := f.Db
-	//get params
+var upgrader = &websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}
+
+func (wsh *WsHandler) GetTablist(w http.ResponseWriter, r *http.Request) {
+	//get websocket connection from
+}
+
+func (wsh *WsHandler) WebsocketConnect(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	server := vars["server"]
+
+	mc_server := vars["server"]
+	wsType := vars["type"]
 	key := vars["key"]
 
-	//check if key is valid, if not return 401
-	if key != "12345" {
-		w.WriteHeader(http.StatusUnauthorized)
+	if ws.WebsocketAuth(key) == false {
+		fmt.Println("Invalid Websocket Key")
+		w.Write([]byte("Invalid Websocket Key"))
 		return
 	}
 
-	fmt.Println(server)
-
-	wss, err := ws.Upgrade(w, r, nil)
+	wsConn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	websocket.WebSocketMessageHandler(wss, db, server)
+	c := &ws.Connection{
+		Send:      make(chan []byte, 256),
+		H:         wsh.H,
+		Mc_server: mc_server,
+		WsType:    wsType,
+	}
+	c.H.AddConnection(c)
+	defer c.H.RemoveConnection(c)
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go c.Writer(&wg, wsConn)
+	go c.Reader(&wg, wsConn)
+	wg.Wait()
+	fmt.Println("done")
+	wsConn.Close()
 }

@@ -7,14 +7,17 @@ import (
 	"github.com/febzey/forestbot-api/pkg/types"
 
 	private_controllers "github.com/febzey/forestbot-api/pkg/controllers/private"
+	"github.com/febzey/forestbot-api/pkg/websocket"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
 )
 
-func PrivateRoutes(router *mux.Router, db *sql.DB, ws *websocket.Upgrader) {
+func PrivateRoutes(router *mux.Router, db *sql.DB, wsHub *websocket.WebSocketHub) {
 	r := private_controllers.PrivateRoute{
 		Db: db,
-		Ws: ws,
+	}
+
+	wsHandler := private_controllers.WsHandler{
+		H: wsHub,
 	}
 
 	var routes = []types.Route{
@@ -62,8 +65,13 @@ func PrivateRoutes(router *mux.Router, db *sql.DB, ws *websocket.Upgrader) {
 		},
 		{
 			Method:      http.MethodGet,
-			Pattern:     "/ws-auth/{server}/{key}",
-			HandlerFunc: r.WebsocketAuth,
+			Pattern:     "/ws-connect/{server}/{type}/{key}",
+			HandlerFunc: wsHandler.WebsocketConnect,
+		},
+		{
+			Method:      http.MethodGet,
+			Pattern:     "/ws-test/{server}/{key}",
+			HandlerFunc: wsHandler.GetTablist,
 		},
 	}
 

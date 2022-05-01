@@ -18,6 +18,8 @@ import (
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/math/fixed"
+
+	"github.com/febzey/forestbot-api/pkg/types"
 )
 
 type User struct {
@@ -74,7 +76,7 @@ func getImageFromFilePath(filePath string) (image.Image, error) {
 
 var ()
 
-func DrawTablist(usersAndPing []User) *image.RGBA {
+func DrawTablist(usersAndPing []types.Users) *image.RGBA {
 	dir, err := GetCurrentDirectory()
 	if err != nil {
 		fmt.Println(err)
@@ -140,7 +142,7 @@ func DrawTablist(usersAndPing []User) *image.RGBA {
 
 	}
 
-	fillTab := func(users []User) {
+	fillTab := func(users []types.Users) {
 
 		y := 0
 		x := 0
@@ -167,7 +169,7 @@ func DrawTablist(usersAndPing []User) *image.RGBA {
 	return img
 }
 
-func GenerateTablist(users []User, w http.ResponseWriter) {
+func GenerateTablist(users []types.Users, w http.ResponseWriter) {
 
 	img := DrawTablist(users)
 

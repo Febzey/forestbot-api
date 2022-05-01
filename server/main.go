@@ -26,12 +26,14 @@ func main() {
 		fmt.Println("Error creating connection to database: ", err)
 	}
 
-	websocket := websocket.Create_websocket_server()
+	//websocket := websocket.Create_websocket_server()
 
 	//watch for new connections to websocket
 
+	wsHub := websocket.NewHub()
+
 	routes.PublicRoutes(router, db)
-	routes.PrivateRoutes(router, db, websocket)
+	routes.PrivateRoutes(router, db, wsHub)
 
 	router.Use(mux.CORSMethodMiddleware(router))
 

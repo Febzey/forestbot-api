@@ -3,10 +3,13 @@ package private_controllers
 import (
 	"database/sql"
 
-	"github.com/gorilla/websocket"
+	ws "github.com/febzey/forestbot-api/pkg/websocket"
 )
 
 type PrivateRoute struct {
 	Db *sql.DB
-	Ws *websocket.Upgrader
+}
+
+type WsHandler struct {
+	H *ws.WebSocketHub
 }

@@ -5,14 +5,21 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/febzey/forestbot-api/pkg/types"
 	"github.com/febzey/forestbot-api/pkg/utils"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
 
+// type webSocketContents struct {
+// 	PlayerList      []string     `json:"playerList"`
+// 	PlayerListExtra []utils.User `json:"playerListExtra"`
+// 	UniquePlayers   int          `json:"uniquePlayers"`
+// }
+
 func (f *PublicRoute) GetTablist(w http.ResponseWriter, r *http.Request) {
 
-	var contents webSocketContents
+	var contents []types.Users
 
 	params := mux.Vars(r)
 	mc_server := params["server"]
@@ -51,7 +58,7 @@ func (f *PublicRoute) GetTablist(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		utils.GenerateTablist(contents.PlayerListExtra, w)
+		utils.GenerateTablist(contents, w)
 		conn.Close()
 		return
 	}

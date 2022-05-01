@@ -9,3 +9,8 @@ type Route struct {
 	Pattern     string
 	HandlerFunc http.HandlerFunc
 }
+
+type Users struct {
+	Name string `json:"username"`
+	Ping int    `json:"ping"`
+}

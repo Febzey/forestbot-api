@@ -11,6 +11,7 @@ import (
 )
 
 func PublicRoutes(router *mux.Router, db *sql.DB) {
+	
 	r := public_controllers.PublicRoute{
 		Db: db,
 	}

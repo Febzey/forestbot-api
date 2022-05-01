@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/febzey/forestbot-api/pkg/utils"
 	"github.com/gorilla/mux"
 )
 
@@ -48,10 +47,4 @@ func (f *PublicRoute) GetLastDeath(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"death": "` + lastdeathString + `", "time": ` + strconv.Itoa(lastdeathTime) + `}`))
 
 	return
-}
-
-type webSocketContents struct {
-	PlayerList      []string     `json:"playerList"`
-	PlayerListExtra []utils.User `json:"playerListExtra"`
-	UniquePlayers   int          `json:"uniquePlayers"`
 }

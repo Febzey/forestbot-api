@@ -20,7 +20,6 @@ func (wsh *WsHandler) WebsocketConnect(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	mc_server := vars["server"]
-	wsType := vars["type"]
 	key := vars["key"]
 
 	if ws.WebsocketAuth(key) == false {
@@ -38,7 +37,6 @@ func (wsh *WsHandler) WebsocketConnect(w http.ResponseWriter, r *http.Request) {
 		Send:      make(chan []byte, 256),
 		H:         wsh.H,
 		Mc_server: mc_server,
-		WsType:    wsType,
 	}
 	c.H.AddConnection(c)
 	defer c.H.RemoveConnection(c)

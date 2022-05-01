@@ -65,7 +65,7 @@ func PrivateRoutes(router *mux.Router, db *sql.DB, wsHub *websocket.WebSocketHub
 		},
 		{
 			Method:      http.MethodGet,
-			Pattern:     "/ws-connect/{server}/{type}/{key}",
+			Pattern:     "/ws-connect/{server}/{key}",
 			HandlerFunc: wsHandler.WebsocketConnect,
 		},
 		{

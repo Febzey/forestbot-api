@@ -59,7 +59,6 @@ type Connection struct {
 	// The hub.
 	H         *WebSocketHub
 	Mc_server string
-	WsType    string
 }
 
 var (
@@ -107,11 +106,13 @@ func (h *WebSocketHub) AddConnection(conn *Connection) {
 	mc_server := conn.Mc_server
 
 	//add a connection to the ConnectionsTest map for the given mc_server if it doesnt exist
+	//later we can get rid of the if statement and just directly append each time,
+	//the if statement is just for testing
 	if _, ok := h.ConnectionsTest[mc_server]; !ok {
 		fmt.Println("Adding new connection for mc server")
 		h.ConnectionsTest[mc_server] = append(h.ConnectionsTest[mc_server], conn)
 	} else {
-		fmt.Println("Adding existing connection for mc server")
+		fmt.Println("Adding connection for mc server") //this is for testing
 		h.ConnectionsTest[mc_server] = append(h.ConnectionsTest[mc_server], conn)
 	}
 

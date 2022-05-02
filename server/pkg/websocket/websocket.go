@@ -4,10 +4,9 @@ import (
 	// "database/sql"
 	// "fmt"
 
+	"encoding/json"
 	"fmt"
-	"log"
 	"sync"
-	"time"
 
 	//"log"
 
@@ -15,49 +14,35 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// type IClients struct {
-// 	Mu     sync.Mutex
-// 	Active map[string]*websocket.Conn
+//TODO: I guess make 1 map for main websockets, then a seperate map for ppl who just want live chat.
+
+// type UserMsg struct {
+// 	Username string `json:"username"`
+// 	Message  string `json:"message"`
+// 	Server   string `json:"mc_server"`
 // }
 
-type UserMsg struct {
-	Username string `json:"username"`
-	Message  string `json:"message"`
-	Server   string `json:"mc_server"`
-}
-
+// hub for all websocket connections
 type WebSocketHub struct {
-	// the mutext to protect connections
 	ConnectionsMx sync.RWMutex
 
-	// Registered Connections
-	Connections map[*Connection]struct{}
+	// a map that takes the minecraft server as key,
+	// and an array of connected websocket clients as the value
+	ConnectedClients map[string][]*Connection
 
-	ConnectionsTest map[string][]*Connection
-
-	//we want to be able to have multiple websocket connections for the same server
-	//maybe a map of maps
-	//TODO: change key name to mc_server, put connection in struct, find a way to iterate through each connection under a certain mc_server.
-	//TODO: create an array inside Connection, which holds all connections for the given minecraft server
-	//check where mc_Server = mc_server
-
-	//we need to filter between which messages are livechats,
-	//and which are get_tablists, maybe stream msg to different channels
-	//depending on the connection type
-
-	// Inbound messages from the connections.
+	// all messages recieved from websockets will go here to be broadcasted
 	Broadcast chan []byte
-
-	LogMx sync.RWMutex
-	Log   [][]byte
 }
 
+// a websocket connection
 type Connection struct {
 	// Buffered channel of outbound messages.
 	Send chan []byte
 
 	// The hub.
-	H         *WebSocketHub
+	H *WebSocketHub
+
+	//the minecraft server this connection is for
 	Mc_server string
 }
 
@@ -69,26 +54,54 @@ var (
 
 func NewHub() *WebSocketHub {
 	h := &WebSocketHub{
-		ConnectionsMx:   sync.RWMutex{},
-		Broadcast:       make(chan []byte),
-		Connections:     make(map[*Connection]struct{}),
-		ConnectionsTest: make(map[string][]*Connection),
+		ConnectionsMx:    sync.RWMutex{},
+		Broadcast:        make(chan []byte),
+		ConnectedClients: make(map[string][]*Connection),
+	}
+
+	type UserMsg struct {
+		Username string `json:"username"`
+		Message  string `json:"message"`
+		Server   string `json:"mc_server"`
+	}
+
+	type AskMsg struct {
+		Message string `json:"message"`
+		Type    string `json:"type"`
 	}
 
 	go func() {
 		for {
 			msg := <-h.Broadcast
 
-			fmt.Println(string(msg), "msg inside of newhub go func")
+			//check if msg suits UserMsg struct
+			var userMsg UserMsg
+			err := json.Unmarshal(msg, &userMsg)
+			if err != nil {
+				fmt.Println("error unmarshalling json")
+			}
+
 			h.ConnectionsMx.RLock()
-			for c := range h.Connections {
-				select {
-				case c.Send <- msg:
-				case <-time.After(1 * time.Second):
-					log.Printf("Shutting down connection %v", c)
-					h.RemoveConnection(c)
+			for _, v := range h.ConnectedClients {
+				for _, conn := range v {
+					fmt.Println(conn.Mc_server)
+					conn.Send <- msg
 				}
 			}
+
+			//loop through ConnectedClients if key is eusurvival'
+			// for _, v := range h.ConnectedClients["eusurvival"] {
+
+			// }
+
+			// for c := range h.Connections {
+			// 	select {
+			// 	case c.Send <- msg:
+			// 	case <-time.After(1 * time.Second):
+			// 		log.Printf("Shutting down connection %v", c)
+			// 		h.RemoveConnection(c)
+			// 	}
+			// }
 			h.ConnectionsMx.RUnlock()
 		}
 	}()
@@ -103,38 +116,24 @@ func NewHub() *WebSocketHub {
 func (h *WebSocketHub) AddConnection(conn *Connection) {
 	h.ConnectionsMx.Lock()
 	defer h.ConnectionsMx.Unlock()
-	mc_server := conn.Mc_server
 
-	//add a connection to the ConnectionsTest map for the given mc_server if it doesnt exist
-	//later we can get rid of the if statement and just directly append each time,
-	//the if statement is just for testing
-	if _, ok := h.ConnectionsTest[mc_server]; !ok {
-		fmt.Println("Adding new connection for mc server")
-		h.ConnectionsTest[mc_server] = append(h.ConnectionsTest[mc_server], conn)
-	} else {
-		fmt.Println("Adding connection for mc server") //this is for testing
-		h.ConnectionsTest[mc_server] = append(h.ConnectionsTest[mc_server], conn)
-	}
+	h.ConnectedClients[conn.Mc_server] = append(h.ConnectedClients[conn.Mc_server], conn)
 
-	for k, v := range h.ConnectionsTest {
+	for k, v := range h.ConnectedClients {
 		fmt.Println("key:", k, "value:", v)
 	}
-
 	return
-
 }
 func (h *WebSocketHub) RemoveConnection(conn *Connection) {
 	h.ConnectionsMx.Lock()
 	defer h.ConnectionsMx.Unlock()
 	mc_server := conn.Mc_server
 
-	//do the opposite of AddConnection
-	//remove the connection from the ConnectionsTest map for the given mc_server if it exists
-	if _, ok := h.ConnectionsTest[mc_server]; ok {
+	if _, ok := h.ConnectedClients[mc_server]; ok {
 		fmt.Println("Removing connection for mc server")
-		for i, v := range h.ConnectionsTest[mc_server] {
+		for i, v := range h.ConnectedClients[mc_server] {
 			if v == conn {
-				h.ConnectionsTest[mc_server] = append(h.ConnectionsTest[mc_server][:i], h.ConnectionsTest[mc_server][i+1:]...)
+				h.ConnectedClients[mc_server] = append(h.ConnectedClients[mc_server][:i], h.ConnectedClients[mc_server][i+1:]...)
 				return
 			} else {
 				fmt.Println("no connection found, so cant remove it")
@@ -157,9 +156,9 @@ func (c *Connection) Reader(wg *sync.WaitGroup, wsConn *websocket.Conn) {
 			break
 		}
 
-		fmt.Println(string(message))
+		// fmt.Println(string(message))
 
-		//will broadcast message to all connected websockets
+		//broadcasting message from websockets to the channel
 		c.H.Broadcast <- message
 	}
 }
@@ -167,7 +166,10 @@ func (c *Connection) Reader(wg *sync.WaitGroup, wsConn *websocket.Conn) {
 func (c *Connection) Writer(wg *sync.WaitGroup, wsConn *websocket.Conn) {
 	defer wg.Done()
 	defer fmt.Println("done write")
-	//print c.Send
+
+	for message := range c.Send {
+		fmt.Println(string(message), " <-- from writer")
+	}
 
 	return
 	// for message := range c.Send {

@@ -22,7 +22,14 @@ func (wsh *WsHandler) WebsocketConnect(w http.ResponseWriter, r *http.Request) {
 	mc_server := vars["server"]
 	key := vars["key"]
 
-	if ws.WebsocketAuth(key) == false {
+	// if ws.WebsocketAuth(key) == false {
+	// 	fmt.Println("Invalid Websocket Key")
+	// 	w.Write([]byte("Invalid Websocket Key"))
+	// 	return
+	// }
+
+	wsType, isAuthed := ws.WebsocketAuth(key)
+	if !isAuthed {
 		fmt.Println("Invalid Websocket Key")
 		w.Write([]byte("Invalid Websocket Key"))
 		return
@@ -37,6 +44,7 @@ func (wsh *WsHandler) WebsocketConnect(w http.ResponseWriter, r *http.Request) {
 		Send:      make(chan []byte, 256),
 		H:         wsh.H,
 		Mc_server: mc_server,
+		Type:      wsType,
 	}
 	c.H.AddConnection(c)
 	defer c.H.RemoveConnection(c)

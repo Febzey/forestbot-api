@@ -4,7 +4,6 @@ import (
 	// "database/sql"
 	// "fmt"
 
-	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -44,11 +43,24 @@ type Connection struct {
 
 	//the minecraft server this connection is for
 	Mc_server string
+	Type      string
 }
 
 var (
-	APIkey string = "12345"
+	MainKey     string = "12345"
+	LiveChatKey string = "livechat"
 )
+
+type UserMsg struct {
+	Username string `json:"username"`
+	Message  string `json:"message"`
+	Server   string `json:"mc_server"`
+}
+
+type AskMsg struct {
+	Message string `json:"message"`
+	Type    string `json:"type"`
+}
 
 //create a map with an array is the value
 
@@ -59,27 +71,9 @@ func NewHub() *WebSocketHub {
 		ConnectedClients: make(map[string][]*Connection),
 	}
 
-	type UserMsg struct {
-		Username string `json:"username"`
-		Message  string `json:"message"`
-		Server   string `json:"mc_server"`
-	}
-
-	type AskMsg struct {
-		Message string `json:"message"`
-		Type    string `json:"type"`
-	}
-
 	go func() {
 		for {
 			msg := <-h.Broadcast
-
-			//check if msg suits UserMsg struct
-			var userMsg UserMsg
-			err := json.Unmarshal(msg, &userMsg)
-			if err != nil {
-				fmt.Println("error unmarshalling json")
-			}
 
 			h.ConnectionsMx.RLock()
 			for _, v := range h.ConnectedClients {
@@ -128,15 +122,11 @@ func (h *WebSocketHub) RemoveConnection(conn *Connection) {
 	h.ConnectionsMx.Lock()
 	defer h.ConnectionsMx.Unlock()
 	mc_server := conn.Mc_server
-
 	if _, ok := h.ConnectedClients[mc_server]; ok {
 		fmt.Println("Removing connection for mc server")
 		for i, v := range h.ConnectedClients[mc_server] {
 			if v == conn {
 				h.ConnectedClients[mc_server] = append(h.ConnectedClients[mc_server][:i], h.ConnectedClients[mc_server][i+1:]...)
-				return
-			} else {
-				fmt.Println("no connection found, so cant remove it")
 				return
 			}
 		}
@@ -188,21 +178,12 @@ func (c *Connection) Writer(wg *sync.WaitGroup, wsConn *websocket.Conn) {
 	// }
 }
 
-//create a websocket server that listens on port 8080 and returns the websocket server when done
-// func Create_websocket_server() *websocket.Upgrader {
-// 	upgrader := websocket.Upgrader{
-// 		ReadBufferSize:  1024,
-// 		WriteBufferSize: 1024,
-// 		CheckOrigin: func(r *http.Request) bool {
-// 			return true
-// 		},
-// 	}
-// 	return &upgrader
-// }
-
-func WebsocketAuth(key string) bool {
-	if key != APIkey {
-		return false
+func WebsocketAuth(key string) (string, bool) {
+	if key == MainKey {
+		return "main", true
 	}
-	return true
+	if key == LiveChatKey {
+		return "livechat", true
+	}
+	return "Not authorized.", false
 }

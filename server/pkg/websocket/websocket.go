@@ -51,15 +51,10 @@ var (
 	LiveChatKey string = "livechat"
 )
 
-type UserMsg struct {
+type LiveChatMessage struct {
 	Username string `json:"username"`
 	Message  string `json:"message"`
 	Server   string `json:"mc_server"`
-}
-
-type AskMsg struct {
-	Message string `json:"message"`
-	Type    string `json:"type"`
 }
 
 //create a map with an array is the value

@@ -13,7 +13,10 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-//TODO: I guess make 1 map for main websockets, then a seperate map for ppl who just want live chat.
+var (
+	MainKey     string = "12345"
+	LiveChatKey string = "livechat"
+)
 
 // type UserMsg struct {
 // 	Username string `json:"username"`
@@ -36,6 +39,7 @@ type WebSocketHub struct {
 // a websocket connection
 type Connection struct {
 	// Buffered channel of outbound messages.
+	// we should change this to livechat message output.
 	Send chan []byte
 
 	// The hub.
@@ -45,11 +49,6 @@ type Connection struct {
 	Mc_server string
 	Type      string
 }
-
-var (
-	MainKey     string = "12345"
-	LiveChatKey string = "livechat"
-)
 
 type LiveChatMessage struct {
 	Username string `json:"username"`
@@ -105,12 +104,11 @@ func NewHub() *WebSocketHub {
 func (h *WebSocketHub) AddConnection(conn *Connection) {
 	h.ConnectionsMx.Lock()
 	defer h.ConnectionsMx.Unlock()
-
 	h.ConnectedClients[conn.Mc_server] = append(h.ConnectedClients[conn.Mc_server], conn)
-
-	for k, v := range h.ConnectedClients {
-		fmt.Println("key:", k, "value:", v)
-	}
+	fmt.Println("adding connection to map")
+	// for k, v := range h.ConnectedClients {
+	// 	fmt.Println("key:", k, "value:", v)
+	// }
 	return
 }
 func (h *WebSocketHub) RemoveConnection(conn *Connection) {
@@ -121,6 +119,7 @@ func (h *WebSocketHub) RemoveConnection(conn *Connection) {
 		fmt.Println("Removing connection for mc server")
 		for i, v := range h.ConnectedClients[mc_server] {
 			if v == conn {
+
 				h.ConnectedClients[mc_server] = append(h.ConnectedClients[mc_server][:i], h.ConnectedClients[mc_server][i+1:]...)
 				return
 			}

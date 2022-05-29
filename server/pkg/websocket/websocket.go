@@ -127,10 +127,7 @@ func (h *WebSocketHub) RemoveConnection(conn *Connection) {
 	}
 }
 
-//
-// Write and Read message handlers.
-// These methods will be accesible from the Connections struct
-//
+// read messages from websocket connection
 func (c *Connection) Reader(wg *sync.WaitGroup, wsConn *websocket.Conn) {
 	defer wg.Done()
 	defer fmt.Println("done reader")
@@ -147,6 +144,7 @@ func (c *Connection) Reader(wg *sync.WaitGroup, wsConn *websocket.Conn) {
 	}
 }
 
+// write messages to websocket connection
 func (c *Connection) Writer(wg *sync.WaitGroup, wsConn *websocket.Conn) {
 	defer wg.Done()
 	defer fmt.Println("done write")

@@ -26,10 +26,6 @@ func main() {
 		fmt.Println("Error creating connection to database: ", err)
 	}
 
-	//websocket := websocket.Create_websocket_server()
-
-	//watch for new connections to websocket
-
 	wsHub := websocket.NewHub()
 
 	routes.PublicRoutes(router, db)

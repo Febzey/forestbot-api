@@ -1,15 +1,9 @@
 package websocket
 
 import (
-	// "database/sql"
-	// "fmt"
-
 	"fmt"
 	"sync"
 
-	//"log"
-
-	//"github.com/febzey/forestbot-api/pkg/database"
 	"github.com/gorilla/websocket"
 )
 
@@ -17,12 +11,6 @@ var (
 	MainKey     string = "12345"
 	LiveChatKey string = "livechat"
 )
-
-// type UserMsg struct {
-// 	Username string `json:"username"`
-// 	Message  string `json:"message"`
-// 	Server   string `json:"mc_server"`
-// }
 
 // hub for all websocket connections
 type WebSocketHub struct {
@@ -36,7 +24,7 @@ type WebSocketHub struct {
 	Broadcast chan []byte
 }
 
-// a websocket connection
+// a single websocket connection
 type Connection struct {
 	// Buffered channel of outbound messages.
 	// we should change this to livechat message output.
